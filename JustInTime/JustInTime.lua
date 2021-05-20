@@ -6,11 +6,31 @@ local addonName, shared = ...
 -- raids can have multiple queues, but you can only receive the queue time for
 -- the latest queue, so we store these times for reloads/relogs/dcs
 
+local floor = _G.floor;
+local strsplit = _G.strsplit;
+local GetTime = _G.GetTime;
+local GetCVar = _G.GetCVar;
+local PlaySoundFile = _G.PlaySoundFile;
+local PVPReadyDialog_Showing = _G.PVPReadyDialog_Showing;
+local IsInGroup = _G.IsInGroup;
+local IsInRaid = _G.IsInRaid;
+local SendChatMessage = _G.SendChatMessage;
+local GetBattlefieldPortExpiration = _G.GetBattlefieldPortExpiration;
+local SecondsToTime = _G.SecondsToTime;
+local GetBattlefieldStatus = _G.GetBattlefieldStatus;
+local GetBattlefieldTimeWaited = _G.GetBattlefieldTimeWaited;
+local GetLFGQueuedList = _G.GetLFGQueuedList;
+local GetLFGQueueStats = _G.GetLFGQueueStats;
+local GetLFGProposal = _G.GetLFGProposal;
 
-local ADDON_VERSION = GetAddOnMetadata(addonName, 'version')
+local PVPReadyDialog = _G.PVPReadyDialog;
+local LFGDungeonReadyDialog = _G.LFGDungeonReadyDialog;
+local DEFAULT_CHAT_FRAME = _G.DEFAULT_CHAT_FRAME;
+
+local ADDON_VERSION = _G.GetAddOnMetadata(addonName, 'version')
 local UPDATE_INTERVAL = 0.1
 
-local addonFrame = CreateFrame('Frame')
+local addonFrame = _G.CreateFrame('Frame')
 local pvpQueue = 0
 local updateTimeStamp = 0
 local pveQueueTimes = {}
@@ -190,6 +210,8 @@ end
 function events:UPDATE_BATTLEFIELD_STATUS (index)
   local status = GetBattlefieldStatus(index)
 
+  print(status);
+
   if (status == 'queued') then
     -- we are always updating this, because Blizzard actually returns the time
     -- from the last queue on the first call
@@ -355,10 +377,7 @@ function events:ADDON_LOADED (name)
 end
 
 events.PLAYER_LOGOUT = globalizeOptions
-
-function events:PLAYER_ENTERING_WORLD ()
-  checkQueues()
-end
+events.PLAYER_ENTERING_WORLD = checkQueues
 
 local function eventHandler (self, event, ...)
   events[event](self, ...)
@@ -440,7 +459,7 @@ end
 local function slashHandler (msg)
   msg = msg or ''
 
-  local cmd, arg = string.split(' ', msg, 2)
+  local cmd, arg = strsplit(' ', msg, 2)
 
   cmd = string.lower(cmd or '')
   arg = string.lower(arg or '')
@@ -457,4 +476,4 @@ end
 
 SLASH_JustInTime1 = '/justintime'
 SLASH_JustInTime2 = '/jit'
-SlashCmdList.JustInTime = slashHandler
+_G.SlashCmdList.JustInTime = slashHandler
