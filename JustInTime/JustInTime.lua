@@ -6,36 +6,35 @@ local addonName, shared = ...
 -- raids can have multiple queues, but you can only receive the queue time for
 -- the latest queue, so we store these times for reloads/relogs/dcs
 
-local floor = _G.floor;
-local strsplit = _G.strsplit;
-local GetTime = _G.GetTime;
-local GetCVar = _G.GetCVar;
-local PlaySoundFile = _G.PlaySoundFile;
-local PVPReadyDialog_Showing = _G.PVPReadyDialog_Showing;
-local IsInGroup = _G.IsInGroup;
-local IsInRaid = _G.IsInRaid;
-local SendChatMessage = _G.SendChatMessage;
-local GetBattlefieldPortExpiration = _G.GetBattlefieldPortExpiration;
-local SecondsToTime = _G.SecondsToTime;
-local GetBattlefieldStatus = _G.GetBattlefieldStatus;
-local GetBattlefieldTimeWaited = _G.GetBattlefieldTimeWaited;
-local GetLFGQueuedList = _G.GetLFGQueuedList;
-local GetLFGQueueStats = _G.GetLFGQueueStats;
-local GetLFGProposal = _G.GetLFGProposal;
+local strsplit = _G.strsplit
+local GetTime = _G.GetTime
+local GetCVar = _G.GetCVar
+local PlaySoundFile = _G.PlaySoundFile
+local PVPReadyDialog_Showing = _G.PVPReadyDialog_Showing
+local IsInGroup = _G.IsInGroup
+local IsInRaid = _G.IsInRaid
+local SendChatMessage = _G.SendChatMessage
+local GetBattlefieldPortExpiration = _G.GetBattlefieldPortExpiration
+local SecondsToTime = _G.SecondsToTime
+local GetBattlefieldStatus = _G.GetBattlefieldStatus
+local GetBattlefieldTimeWaited = _G.GetBattlefieldTimeWaited
+local GetLFGQueuedList = _G.GetLFGQueuedList
+local GetLFGQueueStats = _G.GetLFGQueueStats
+local GetLFGProposal = _G.GetLFGProposal
 
-local PVPReadyDialog = _G.PVPReadyDialog;
-local LFGDungeonReadyDialog = _G.LFGDungeonReadyDialog;
-local DEFAULT_CHAT_FRAME = _G.DEFAULT_CHAT_FRAME;
+local PVPReadyDialog = _G.PVPReadyDialog
+local LFGDungeonReadyDialog = _G.LFGDungeonReadyDialog
+local DEFAULT_CHAT_FRAME = _G.DEFAULT_CHAT_FRAME
 
 local ADDON_VERSION = _G.GetAddOnMetadata(addonName, 'version')
 local UPDATE_INTERVAL = 0.1
 
 local addonFrame = _G.CreateFrame('Frame')
-local pvpQueue = 0
-local updateTimeStamp = 0
+local updateTimeStamp
+local pvpQueue
+local pvpQueueTimes = {}
 local pveQueueTimes = {}
 local pveRemaining = 0
-local pvpQueueTimes = {}
 local events = {}
 
 local options = {}
@@ -53,74 +52,68 @@ LFGDungeonReadyDialog.label.SetText = function () end
 ///*****************************************************************************
 --]]
 
-local function printTable (table)
-  for i,v in pairs(table) do
-    print(i, ' - ', v)
-  end
-end
-
-local function playSound (soundId)
-  if (options.forceSound == true and
-      GetCVar('Sound_EnableSFX') == '0') then
-     --[[ because for some fucked up reason blizzard decides to not allow sounds
-          to be played using their file path anymore --]]
-
-    PlaySoundFile(soundId, 'master')
-  end
-end
-
-local function getMinimumDist (list, target)
-  local result
-
-  for key, value in pairs(list) do
-    local dist = math.abs(target - key)
-    if (result == nil or
-        dist < result.dist) then
-      result = {
-        dist = dist,
-        key = key
-      }
-    end
-  end
-
-  return result
-end
-
-local function Print (msg)
+local function printMessage (msg)
   DEFAULT_CHAT_FRAME:AddMessage('|cff33ff99JIT|r: ' .. msg)
 end
 
-local function printTime (time)
-  local announce = options.announce
-
-  if (announce == 'off') then
+local function playSound (soundId)
+  if (options.forceSound ~= true or
+      GetCVar('Sound_EnableSFX') ~= '1') then
     return
   end
 
-  local secs = floor(GetTime() - time)
-  local str = 'Queue popped '
+  PlaySoundFile(soundId, 'master')
+end
 
-  if (secs < 1) then
-    str = str .. 'instantly!'
+local function formatTime (seconds)
+  local color
+
+  if (seconds > 20) then
+    color = 'ff20ff20'
+  elseif (seconds > 10) then
+    color = 'ffffff00'
   else
-    str = str .. 'after '
+    color = 'ffff0000'
+  end
 
-    if (secs >= 60) then
-      str = str .. floor(secs / 60) .. 'm '
-      secs = secs % 60
-    end
+  return '|c' .. color .. SecondsToTime(seconds) .. '|r'
+end
 
-    if (secs % 60) ~= 0 then
-      str = str .. secs .. 's'
+local function getClosestQueue (list, target)
+  local index, distance
+
+  for key in pairs(list) do
+    local dist = math.abs(target - key)
+
+    if (distance == nil or
+        dist < distance) then
+      index = key
+      distance = dist
     end
   end
-  if (announce == 'self' or
-      not IsInGroup()) then
-    Print(str)
-  else
-    local group = IsInRaid() and 'RAID' or 'PARTY'
 
-    SendChatMessage(str, group)
+  return index, distance
+end
+
+
+local function printTime (seconds)
+  if (options.announce == 'off') then
+    return
+  end
+
+  local message = 'Queue popped '
+
+  if (seconds < 1) then
+    message = message .. 'instantly!'
+  else
+    message = message .. 'after ' .. SecondsToTime(seconds)
+  end
+
+  if (options.announce == 'self' or
+      not IsInGroup()) then
+    printMessage(message)
+  else
+    SendChatMessage(message, (IsInRaid() and 'RAID') or 'PARTY')
   end
 end
 
@@ -184,7 +177,21 @@ end
 ///#############################################################################
 --]]
 
-local function showPVPTimer (self, elapsed)
+local function updatePVPTimer ()
+  if PVPReadyDialog_Showing(pvpQueue) then
+    local seconds = GetBattlefieldPortExpiration(pvpQueue)
+
+    if (seconds and seconds > 0) then
+      PVPReadyDialog.label:SetText('Expires in ' .. formatTime(seconds))
+    end
+  else
+    pvpQueue = nil
+    updateTimeStamp = nil
+    addonFrame:SetScript('OnUpdate', nil)
+  end
+end
+
+local function pvpTimer_OnUpdate (_, elapsed)
   updateTimeStamp = updateTimeStamp + elapsed
 
   if (updateTimeStamp < UPDATE_INTERVAL) then
@@ -192,49 +199,44 @@ local function showPVPTimer (self, elapsed)
   end
 
   updateTimeStamp = 0
-
-  if PVPReadyDialog_Showing(pvpQueue) then
-    local secs = GetBattlefieldPortExpiration(pvpQueue)
-
-    if (secs and secs > 0) then
-      local color = secs > 20 and 'f20ff20' or secs > 10 and 'fffff00' or 'fff0000'
-
-      PVPReadyDialog.label:SetText('Expires in |cf'..color.. SecondsToTime(secs) .. '|r')
-    end
-  else
-    pvpQueue = 0
-    addonFrame:SetScript('OnUpdate', nil)
-  end
+  updatePVPTimer()
 end
 
-function events:UPDATE_BATTLEFIELD_STATUS (index)
-  local status = GetBattlefieldStatus(index)
+local function storePVPQueueTime (index)
+  pvpQueueTimes[index] = GetBattlefieldTimeWaited(index)
+end
 
-  print(status);
+local function handlePVPQueuePop (index)
+  pvpQueue = index
+  playSound(568011)
 
-  if (status == 'queued') then
-    -- we are always updating this, because Blizzard actually returns the time
-    -- from the last queue on the first call
-    pvpQueueTimes[index] = GetTime() - GetBattlefieldTimeWaited(index) / 1000
-  elseif (status == 'confirm') then
-    if (pvpQueueTimes[index] ~= nil) then
-      printTime(pvpQueueTimes[index])
-      pvpQueueTimes[index] = nil
-      updateTimeStamp = UPDATE_INTERVAL
-      pvpQueue = index
-      addonFrame:SetScript('OnUpdate', showPVPTimer)
-      playSound(568011)
-    end
-
-    if (options.hideButton == true) then
-      hidePvPButton()
-    else
-      showPvPButton()
-    end
-  else
+  if (pvpQueueTimes[index] ~= nil) then
+    printTime(pvpQueueTimes[index] / 1000)
     pvpQueueTimes[index] = nil
   end
+
+  updatePVPTimer()
+  updateTimeStamp = 0
+  addonFrame:SetScript('OnUpdate', pvpTimer_OnUpdate)
+
+  if (options.hideButton == true) then
+    hidePvPButton()
+  else
+    showPvPButton()
+  end
 end
+
+local function checkPVPQueue (index)
+  local status = GetBattlefieldStatus(index)
+
+  if (status == 'queued') then
+    storePVPQueueTime(index)
+  elseif (status == 'confirm') then
+    handlePVPQueuePop(index)
+  end
+end
+
+events.UPDATE_BATTLEFIELD_STATUS = checkPVPQueue
 
 --[[
 ///#############################################################################
@@ -242,27 +244,26 @@ end
 ///#############################################################################
 --]]
 
-local function showPVETimer (self, elapsed)
+local function updatePVETimer ()
+  -- I didn't find a function to check if the dialog is still displayed, so we stop updating after the time is over
+  if (pveRemaining > 0) then
+    updateLFGDialogLabel(LFGDungeonReadyDialog.label, 'Expires in ' .. formatTime(pveRemaining))
+  else
+    addonFrame:SetScript('OnUpdate', nil)
+    updateTimeStamp = nil
+  end
+end
+
+local function pveTimer_OnUpdate (_, elapsed)
   updateTimeStamp = updateTimeStamp + elapsed
 
   if (updateTimeStamp < UPDATE_INTERVAL) then
     return
   end
 
-  local secs
-
   pveRemaining = pveRemaining - updateTimeStamp
   updateTimeStamp = 0
-  secs = math.floor(pveRemaining)
-
-  -- I didn't find a function to check if the dialog is still displayed, so we stop updating after the time is over
-  if pveRemaining > 0 then
-    local color = secs > 20 and 'f20ff20' or secs > 10 and 'fffff00' or 'fff0000'
-
-    updateLFGDialogLabel(LFGDungeonReadyDialog.label, 'Expires in |cf' .. color .. SecondsToTime(secs) .. '|r')
-  else
-    addonFrame:SetScript('OnUpdate', nil)
-  end
+  updatePVETimer()
 end
 
 local function showDungeonPopped (id)
@@ -270,24 +271,21 @@ local function showDungeonPopped (id)
   playSound(567478)
 
   if (pveQueueTimes[id] ~= nil) then
-    printTime(pveQueueTimes[id])
-    -- pveQueueTimes[id] = nil
+    printTime(GetTime() - pveQueueTimes[id])
     return
   end
 
-  local dist = getMinimumDist(pveQueueTimes, id)
+  local queue = getClosestQueue(pveQueueTimes, id)
 
-  if (dist ~= nil) then
-    printTime(pveQueueTimes[dist.key])
+  if (queue ~= nil) then
+    printTime(GetTime() - pveQueueTimes[queue])
   end
 end
 
-local function checkQueues ()
-  for i = 1, 6 do -- queue subtype constants range from 1 to 6
-    local categoryList = GetLFGQueuedList(i)
-    local time = select(17, GetLFGQueueStats(i))
-
-    time = tonumber(time)
+local function checkPVEQueues ()
+  for x = 1, 6 do -- queue subtype constants range from 1 to 6
+    local categoryList = GetLFGQueuedList(x)
+    local time = select(17, GetLFGQueueStats(x))
 
     for key, value in pairs(categoryList) do
       if (time ~= nil) then
@@ -297,25 +295,18 @@ local function checkQueues ()
   end
 end
 
-function events:LFG_UPDATE ()
-  checkQueues()
-end
+events.LFG_QUEUE_STATUS_UPDATE = checkPVEQueues
+events.LFG_PROPOSAL_FAILED = checkPVEQueues
 
-function events:LFG_PROPOSAL_FAILED ()
-  -- print('failed')
-  checkQueues()
-end
-
-function events:LFG_PROPOSAL_SHOW ()
+function events.LFG_PROPOSAL_SHOW ()
   local info = {GetLFGProposal()}
   -- local category = info[4]
   local id = info[2]
 
   showDungeonPopped(id)
-
-  pveRemaining = 40 + UPDATE_INTERVAL
-  updateTimeStamp = UPDATE_INTERVAL
-  addonFrame:SetScript('OnUpdate', showPVETimer)
+  pveRemaining = 40
+  updateTimeStamp = 0
+  addonFrame:SetScript('OnUpdate', pveTimer_OnUpdate)
 end
 
 --[[
@@ -356,17 +347,17 @@ local function initDefaultOptions ()
   options.forceSound = options.forceSound or true
 end
 
-function events:ADDON_LOADED (name)
+function events.ADDON_LOADED (name)
   if (name ~= addonName) then return end
 
   migrateOptions()
 
   if (options.hideButton == nil) then
-    Print('Toggle the Leave Queue Button using \'/jit button hide/show\'')
+    printMessage('Toggle the Leave Queue Button using \'/jit button hide/show\'')
   end
 
   if (options.forceSound == nil) then
-    Print('You can play queue sounds even when muted using \'/jit sound on/off\'')
+    printMessage('You can play queue sounds even when muted using \'/jit sound on/off\'')
   end
 
   initDefaultOptions()
@@ -374,13 +365,16 @@ function events:ADDON_LOADED (name)
   if (options.hideButton == true) then
     hideButton()
   end
+
+  events.ADDON_LOADED = nil
+  addonFrame:UnregisterEvent('ADDON_LOADED')
 end
 
+events.PLAYER_ENTERING_WORLD = checkPVEQueues
 events.PLAYER_LOGOUT = globalizeOptions
-events.PLAYER_ENTERING_WORLD = checkQueues
 
-local function eventHandler (self, event, ...)
-  events[event](self, ...)
+local function eventHandler (_, event, ...)
+  events[event](...)
 end
 
 addonFrame:SetScript('OnEvent', eventHandler)
@@ -400,12 +394,12 @@ local slashCommands = {}
 function slashCommands:announce (arg)
   if (arg == 'off' or arg == 'self' or arg == 'group') then
     options.announce = arg
-    Print('Announce set to ' .. arg)
+    printMessage('Announce set to ' .. arg)
   elseif (arg == '') then
-    Print('Announce is currently set to ' .. options.announce)
+    printMessage('Announce is currently set to ' .. options.announce)
   else
-    Print('Invalid announce setting')
-    Print('Announce types are \'off\', \'self\', and \'group\'')
+    printMessage('Invalid announce setting')
+    printMessage('Announce types are \'off\', \'self\', and \'group\'')
   end
 end
 
@@ -413,42 +407,42 @@ function slashCommands:button (arg)
   if (arg == 'hide' or arg == 'off') then
     options.hideButton = true
     hideButton()
-    Print('Leave Queue button is now hidden')
+    printMessage('Leave Queue button is now hidden')
     return
   elseif (arg == 'show' or arg == 'on') then
     options.hideButton = false
     showButton()
-    Print('Leave Queue button is now shown')
+    printMessage('Leave Queue button is now shown')
     return
   elseif (arg == '') then
     if (options.hideButton == true) then
-      Print('Leave Queue button is hidden')
+      printMessage('Leave Queue button is hidden')
     else
-      Print('Leave Queue button is shown')
+      printMessage('Leave Queue button is shown')
     end
     return
   else
-    Print('Invalid button setting')
-    Print('Allowed settings are \'hide\' and \'show\'')
+    printMessage('Invalid button setting')
+    printMessage('Allowed settings are \'hide\' and \'show\'')
   end
 end
 
 function slashCommands:sound (arg)
   if (arg == 'on') then
-    Print('Queue sounds will play even when muted')
+    printMessage('Queue sounds will play even when muted')
     options.forceSound = true
   elseif (arg == 'off') then
     options.forceSound = false
-    Print('Queue sounds will not play when muted')
+    printMessage('Queue sounds will not play when muted')
   elseif (arg == '') then
     if (options.forceSound == true) then
-      Print('Queue sounds will play even when muted')
+      printMessage('Queue sounds will play even when muted')
     else
-      Print('Queue sounds will not play when muted')
+      printMessage('Queue sounds will not play when muted')
     end
   else
-    Print('Invalid sound setting')
-    Print('Allowed settings are \'on\' and \'off\'')
+    printMessage('Invalid sound setting')
+    printMessage('Allowed settings are \'on\' and \'off\'')
   end
 end
 
@@ -471,7 +465,7 @@ local function slashHandler (msg)
     return
   end
 
-  Print('Unknown command "' .. msg .. '"')
+  printMessage('Unknown command "' .. msg .. '"')
 end
 
 SLASH_JustInTime1 = '/justintime'
