@@ -41,6 +41,8 @@ local function migrateOptions ()
     for _, option in ipairs(paramList) do
       options[option] = _G.options[option]
     end
+  else
+    options = {}
   end
 
   addon.options = options
