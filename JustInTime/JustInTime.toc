@@ -6,4 +6,4 @@
 ## DefaultState: enabled
 ## SavedVariables: JustInTime_options
 
-JustInTime.lua
+JustInTime.xml

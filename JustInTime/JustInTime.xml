@@ -1,0 +1,8 @@
+<UI>
+  <script file="Events.lua"></script>
+  <script file="SlashCommands.lua"></script>
+  <script file="Utils.lua"></script>
+  <script file="Core.lua"></script>
+  <script file="PvPQueues.lua"></script>
+  <script file="PvEQueues.lua"></script>
+</UI>
