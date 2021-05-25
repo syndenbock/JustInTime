@@ -1,3 +1,7 @@
+  version 1.6
+- updated toc version for 9.0.5
+- Rewrote most of the addon for better performance and reliability
+
   version 1.5
 - updated toc version for 9.0
 - reworked saved variables to prevent conflicts
