@@ -14,7 +14,7 @@ local function printMessage (msg)
 end
 
 local function playSound (soundId)
-  if (addon.options.forceSound ~= true or
+  if (addon.options.forceSound ~= true and
       GetCVar('Sound_EnableSFX') ~= '1') then
     return
   end
