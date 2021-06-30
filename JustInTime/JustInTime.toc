@@ -1,8 +1,11 @@
 ## Interface: 90100
 ## Title: JustInTime
-## Notes: Shows queue times and remaining accept times for all queues
 ## Version: 1.6
 ## Author: syndenbock
+## Notes: Shows queue times and remaining accept times for all queues
+
+## X-Curse-Project-ID: 297308
+
 ## DefaultState: enabled
 ## SavedVariables: JustInTime_options
 

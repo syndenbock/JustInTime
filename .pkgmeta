@@ -1,0 +1,14 @@
+package-as: JustInTime
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - Media
+  - .gitignore
+  - CHANGELOG.md
+  - JustInTime/CHANGELOG.md
+
+move-folders:
+  JustInTime/JustInTime: JustInTime

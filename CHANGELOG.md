@@ -1,0 +1,1 @@
+- Fixed "force sound" option
