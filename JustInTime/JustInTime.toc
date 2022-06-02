@@ -1,6 +1,6 @@
 ## Interface: 90205
 ## Title: JustInTime
-## Version: 1.6.1
+## Version: 1.6.2
 ## Author: syndenbock
 ## Notes: Shows queue times and remaining accept times for all queues
 
