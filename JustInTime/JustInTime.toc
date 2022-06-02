@@ -1,4 +1,4 @@
-## Interface: 90100
+## Interface: 90205
 ## Title: JustInTime
 ## Version: 1.6.1
 ## Author: syndenbock
