@@ -1,1 +1,2 @@
-- Updated interface version for 9.2.7
+- Updated interface version for 10.0.2
+- Fixed some sounds being played extra loud
