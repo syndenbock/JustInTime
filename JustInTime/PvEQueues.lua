@@ -83,8 +83,9 @@ local function getClosestQueue (list, target)
 end
 
 local function showDungeonPopped (id)
-  -- the dungeon sound is called levelup2 lul
-  playSound(567478)
+  -- The game now plays a dungeon queue sound in the master channel on its own
+  -- so this is no longer needed
+  -- playSound(567478)
 
   if (pveQueueTimes[id] ~= nil) then
     printTime(GetTime() - pveQueueTimes[id])

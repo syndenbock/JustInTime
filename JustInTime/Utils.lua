@@ -14,12 +14,10 @@ local function printMessage (msg)
 end
 
 local function playSound (soundId)
-  if (addon.options.forceSound ~= true and
-      GetCVar('Sound_EnableSFX') ~= '1') then
-    return
+  if (GetCVar('Sound_EnableSFX') ~= '1' and
+      addon.options.forceSound == true) then
+    PlaySoundFile(soundId, 'Master')
   end
-
-  PlaySoundFile(soundId, 'master')
 end
 
 local function formatTime (seconds)
