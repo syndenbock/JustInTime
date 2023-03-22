@@ -1,6 +1,6 @@
-## Interface: 100005
+## Interface: 100007
 ## Title: JustInTime
-## Version: 1.6.5
+## Version: 1.6.6
 ## Author: syndenbock
 ## Notes: Shows queue times and remaining accept times for all queues
 
