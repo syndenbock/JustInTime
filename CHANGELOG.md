@@ -1,1 +1,1 @@
-- Updated interface version for 10.2.6
+- Updated interface version for Retail 10.2.7
