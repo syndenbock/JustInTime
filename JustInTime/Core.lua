@@ -102,6 +102,7 @@ addon.registerEvent('PLAYER_LOGOUT', globalizeOptions)
 ///*****************************************************************************
 --]]
 
+addon.addSlashHandlerName(addonName)
 addon.addSlashHandlerName('jit')
 
 addon.slash('announce', function (arg)
@@ -161,5 +162,5 @@ addon.slash('sound', function (arg)
 end)
 
 addon.slash('default', function ()
-  DEFAULT_CHAT_FRAME:AddMessage('|cff33ff99JustInTime ' .. ADDON_VERSION .. '|r')
+  DEFAULT_CHAT_FRAME:AddMessage('|cff33ff99' .. addonName .. '|r version: ' .. ADDON_VERSION)
 end)
