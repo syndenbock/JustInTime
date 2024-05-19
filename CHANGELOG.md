@@ -1,1 +1,1 @@
-- Updated interface version for Retail 10.2.7
+- Improved slash command code and make commands case-insensitive
