@@ -1,1 +1,1 @@
-- Improved slash command code and make commands case-insensitive
+- Updated interface version for 11.0
