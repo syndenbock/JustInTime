@@ -7,7 +7,7 @@ local addonName, addon = ...
 -- the latest queue, so we store these times for reloads/relogs/dcs
 
 local DEFAULT_CHAT_FRAME = _G.DEFAULT_CHAT_FRAME
-local ADDON_VERSION = _G.GetAddOnMetadata(addonName, 'version')
+local ADDON_VERSION = _G.C_AddOns.GetAddOnMetadata(addonName, 'version')
 
 local printMessage = addon.printMessage
 
