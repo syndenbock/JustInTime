@@ -84,16 +84,14 @@ local function globalizeOptions ()
   end
 end
 
-addon.registerEvent('ADDON_LOADED', function (name)
-  if (name ~= addonName) then
-    return false
+local function addonLoadHandler (name)
+  if (name == addonName) then
+    addon.unregisterEvent('ADDON_LOADED', addonLoadHandler)
+    initOptions()
   end
+end
 
-  initOptions()
-
-  return true
-end)
-
+addon.registerEvent('ADDON_LOADED', addonLoadHandler)
 addon.registerEvent('PLAYER_LOGOUT', globalizeOptions)
 
 --[[

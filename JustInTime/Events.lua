@@ -25,9 +25,7 @@ end
 
 eventFrame:SetScript('OnEvent', function (_, event, ...)
   for callback in pairs(callbacks[event]) do
-    if (callback(...) == true) then
-      removeCallback(event, callback)
-    end
+    callback(...)
   end
 end)
 
