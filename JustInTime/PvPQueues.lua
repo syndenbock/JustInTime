@@ -17,7 +17,11 @@ local updateTimeStamp
 local pvpQueue
 local pvpQueueTimes = {}
 
-PVPReadyDialog.label:SetPoint('TOP', 0, -22)
+local function getPVPDialogLabel ()
+  return PVPReadyDialog.label or PVPReadyDialog.text;
+end
+
+getPVPDialogLabel():SetPoint('TOP', 0, -22)
 
 local function hidePvPButton ()
   PVPReadyDialog.leaveButton:Hide()
@@ -47,7 +51,7 @@ local function updatePVPTimer ()
     local seconds = GetBattlefieldPortExpiration(pvpQueue)
 
     if (seconds and seconds > 0) then
-      PVPReadyDialog.label:SetText('Expires in ' .. formatTime(seconds))
+      getPVPDialogLabel():SetText('Expires in ' .. formatTime(seconds))
     end
   else
     pvpQueue = nil
