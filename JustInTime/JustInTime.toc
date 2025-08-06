@@ -1,4 +1,4 @@
-## Interface: 110107
+## Interface: 110200
 ## Interface-Mists: 50500
 ## Title: JustInTime
 ## Version: 1.7.7
