@@ -1,5 +1,5 @@
 ## Interface: 110200
-## Interface-Mists: 50500
+## Interface-Mists: 50501
 ## Title: JustInTime
 ## Version: 1.7.8
 ## Author: syndenbock
