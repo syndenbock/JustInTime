@@ -1,7 +1,7 @@
 ## Interface: 120007
 ## Interface-Mists: 50504
 ## Title: JustInTime
-## Version: 1.7.16
+## Version: 1.7.17
 ## Author: syndenbock
 ## Notes: Shows queue times and remaining accept times for all queues
 
